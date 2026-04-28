@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fraud Detection System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- Background grid decoration -->
+  <div class="bg-grid"></div>
+
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="logo-mark">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2L26 8V20L14 26L2 20V8L14 2Z" stroke="var(--accent)" stroke-width="2" fill="none"/>
+          <path d="M14 7L21 11V17L14 21L7 17V11L14 7Z" fill="var(--accent)" opacity="0.3"/>
+          <circle cx="14" cy="14" r="3" fill="var(--accent)"/>
+        </svg>
+      </div>
+      <div class="header-text">
+        <span class="header-label">PaySim Analytics</span>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <p class="hero-eyebrow">Machine Learning Risk Engine</p>
+      <h1 class="hero-title">Fraud Detection<br/><em>System</em></h1>
+      <p class="hero-sub">PaySim Transaction Risk Checker — powered by Random Forest</p>
+    </section>
+
+    <!-- Error Banner -->
+    {% if errors %}
+    <div class="alert-banner">
+      <div class="alert-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      </div>
+      <div class="alert-body">
+        <strong>Please fix the following:</strong>
+        <ul>
+          {% for e in errors %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Result Card -->
+    {% if result %}
+    <div class="result-card result-{{ result.risk_class }}">
+      <div class="result-header">
+        <div class="result-icon">
+          {% if result.is_fraud %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          {% else %}
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <polyline points="9 12 11 14 15 10"/>
+          </svg>
+          {% endif %}
+        </div>
+        <div class="result-title-group">
+          <h2 class="result-verdict">{{ result.label }}</h2>
+          <span class="result-risk-badge badge-{{ result.risk_class }}">{{ result.risk_label }}</span>
+        </div>
+        <div class="result-confidence">
+          <span class="conf-number">{{ result.confidence }}%</span>
+          <span class="conf-label">Confidence</span>
+        </div>
+      </div>
+
+      <div class="result-meter">
+        <div class="meter-bar">
+          <div class="meter-fill meter-fill-{{ result.risk_class }}" style="width: {{ result.confidence }}%"></div>
+        </div>
+      </div>
+
+      <div class="result-explanation">
+        <div class="expl-label">Analysis</div>
+        <p>{{ result.explanation }}</p>
+      </div>
+
+      <div class="result-meta">
+        <div class="meta-chip">
+          <span class="meta-key">Type</span>
+          <span class="meta-val">{{ result.transaction_type }}</span>
+        </div>
+        <div class="meta-chip">
+          <span class="meta-key">Amount</span>
+          <span class="meta-val">${{ result.amount }}</span>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Form Card -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <h3>Transaction Details</h3>
+        <p>Enter the transaction parameters below to assess fraud risk.</p>
+      </div>
+
+      <form action="/predict" method="POST" class="tx-form" novalidate>
+
+        <div class="form-row two-col">
+          <div class="field-group">
+            <label for="step">
+              Step
+              <span class="field-hint">Time unit (1 step = 1 hour)</span>
+            </label>
+            <input
+              type="number" id="step" name="step" min="1" step="1"
+              placeholder="e.g. 1"
+              value="{{ form_data.step if form_data else '' }}"
+              required
+            />
+          </div>
+
+          <div class="field-group">
+            <label for="transaction_type">
+              Transaction Type
+            </label>
+            <div class="select-wrapper">
+              <select id="transaction_type" name="transaction_type" required>
+                {% for t in transaction_types %}
+                <option value="{{ t }}" {% if form_data and form_data.transaction_type == t %}selected{% endif %}>
+                  {{ t }}
+                </option>
+                {% endfor %}
+              </select>
+              <svg class="select-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field-group">
+            <label for="amount">
+              Amount
+              <span class="field-hint">Transaction value in local currency</span>
+            </label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="number" id="amount" name="amount" min="0" step="0.01"
+                placeholder="0.00"
+                value="{{ form_data.amount if form_data else '' }}"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-divider">
+          <span>Sender Balances</span>
+        </div>
+
+        <div class="form-row two-col">
+          <div class="field-group">
+            <label for="oldbalanceOrg">
+              Old Balance
+              <span class="field-hint">Before transaction</span>
+            </label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="number" id="oldbalanceOrg" name="oldbalanceOrg" min="0" step="0.01"
+                placeholder="0.00"
+                value="{{ form_data.oldbalanceOrg if form_data else '' }}"
+                required
+              />
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="newbalanceOrig">
+              New Balance
+              <span class="field-hint">After transaction</span>
+            </label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="number" id="newbalanceOrig" name="newbalanceOrig" min="0" step="0.01"
+                placeholder="0.00"
+                value="{{ form_data.newbalanceOrig if form_data else '' }}"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section-divider">
+          <span>Receiver Balances</span>
+        </div>
+
+        <div class="form-row two-col">
+          <div class="field-group">
+            <label for="oldbalanceDest">
+              Old Balance
+              <span class="field-hint">Before transaction</span>
+            </label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="number" id="oldbalanceDest" name="oldbalanceDest" min="0" step="0.01"
+                placeholder="0.00"
+                value="{{ form_data.oldbalanceDest if form_data else '' }}"
+                required
+              />
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="newbalanceDest">
+              New Balance
+              <span class="field-hint">After transaction</span>
+            </label>
+            <div class="input-prefix-wrapper">
+              <span class="input-prefix">$</span>
+              <input
+                type="number" id="newbalanceDest" name="newbalanceDest" min="0" step="0.01"
+                placeholder="0.00"
+                value="{{ form_data.newbalanceDest if form_data else '' }}"
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="submit-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Analyze Transaction
+        </button>
+
+      </form>
+    </div>
+
+    <footer class="site-footer">
+      <p>Fraud Detection System &mdash; PaySim Random Forest Model &mdash; Demo Build</p>
+    </footer>
+
+  </div><!-- /page-wrapper -->
+
+</body>
+</html>
